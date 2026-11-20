@@ -1,12 +1,12 @@
-// Entry program for news-image-20261120.
-// Copies the pre-rendered image entry.png from this repository
-// into the output directory as entry.png. Deterministic: the
-// same bytes are written on every run.
-import { copyFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+// Entry point: copies entry.png into the grader output directory.
+// Node 22, stdlib only, no network. Never deletes the output directory.
+import { copyFileSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-const repoRoot = dirname(fileURLToPath(import.meta.url));
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+const repoDir = dirname(fileURLToPath(import.meta.url));
+const outDir = process.env.MAKEFUN_OUTPUT_DIR || "/output";
+
 mkdirSync(outDir, { recursive: true });
-copyFileSync(join(repoRoot, 'entry.png'), join(outDir, 'entry.png'));
+copyFileSync(join(repoDir, "entry.png"), join(outDir, "entry.png"));
+console.log("copied entry.png to", outDir);

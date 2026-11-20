@@ -1,1 +1,1 @@
-{"name":"news-image-20261120","private":true,"type":"module"}
+{"name":"news-image-20261120","private":true,"scripts":{"render":"node render.mjs"},"type":"module","version":"1.0.0"}

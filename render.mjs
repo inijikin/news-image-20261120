@@ -1,23 +1,33 @@
-// Render render.html to entry.png (1024x1024) with headless Chromium.
-// Uses the Chromium binary directly (no npm packages needed).
-// Usage: node render.mjs [output-path, default ./entry.png]
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { homedir } from 'node:os';
-import path from 'node:path';
+// Renders render.html to entry.png (1024x1024) with headless Chromium.
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { statSync } from "node:fs";
+import { dirname, join } from "node:path";
 
-const run = promisify(execFile);
-const out = path.resolve(process.argv[2] || path.join(process.cwd(), 'entry.png'));
-const html = 'file://' + path.join(process.cwd(), 'render.html');
-const chrome = path.join(
-  homedir(), '.cache', 'ms-playwright', 'chromium-1254', 'chrome-linux64', 'chrome'
-);
+const require = createRequire(import.meta.url);
+const { chromium } = require("/tmp/pw-render/node_modules/playwright-core");
 
-await run(chrome, [
-  '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
-  '--force-device-scale-factor=1',
-  '--window-size=1024,1024',
-  '--screenshot=' + out,
-  html,
-]);
-console.log('wrote', out);
+const repoDir = dirname(fileURLToPath(import.meta.url));
+const htmlPath = join(repoDir, "render.html");
+const outPath = join(repoDir, "entry.png");
+const chromeBin =
+  process.env.HOME + "/.cache/ms-playwright/chromium-1254/chrome-linux64/chrome";
+
+const browser = await chromium.launch({
+  executablePath: chromeBin,
+  args: ["--no-sandbox", "--force-device-scale-factor=1"],
+});
+const page = await browser.newPage({
+  viewport: { width: 1024, height: 1024 },
+  deviceScaleFactor: 1,
+});
+await page.goto("file://" + htmlPath, { waitUntil: "load" });
+await page.screenshot({ path: outPath });
+await browser.close();
+
+const size = statSync(outPath).size;
+console.log("wrote", outPath, size, "bytes");
+if (size > 1024 * 1024) {
+  console.error("ERROR: entry.png over 1 MiB");
+  process.exit(1);
+}
